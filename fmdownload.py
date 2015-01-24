@@ -3,6 +3,7 @@
 import time
 import re
 import urllib.request
+import os
 
 def Schedule(a, b, c):
     """TODO: Docstring for Schedule.
@@ -23,7 +24,7 @@ print("Ready to download from http://teahour.fm")
 start = time.clock()
 mainpage_url = "http://teahour.fm"
 page_pattern = re.compile(r"/\d{4}/\d{2}/\d{2}/[\w-]*.html") # not include the mainpage_url
-audio_pattern = re.compile( r"http://screencasts.b0.upaiyun.com/podcasts/[\w-]*.m4a" )
+audio_pattern = re.compile( r"http://[\w./]*/[\w-]*.(m4a|mp3)" )
 
 data = urllib.request.urlopen(mainpage_url).read()
 mainpage_html = data.decode('UTF-8')
@@ -36,14 +37,30 @@ print("Page analysis has been done. Totally " + str(len(episode_set)) + " audio 
 num = 1
 for episode in episode_set :
 
-    episode_url = mainpage_url + episode
+    episode_url = mainpage_url + episode # generate the url of each episode
     # print(episode_url)
     data = urllib.request.urlopen(episode_url).read()
     episode_html = data.decode('UTF-8')
-    audio_url = audio_pattern.search(episode_html).group()
-    print("No."+ str( num )+": Downloading "+audio_url)
-    local = audio_url.split('/')[-1]
-    urllib.request.urlretrieve(audio_url,local, Schedule)
+
+    audio_search = audio_pattern.search(episode_html)
+    if audio_search :
+        audio_url = audio_search.group()
+
+        # print(audio_url)
+        print("No."+ str( num )+": Downloading "+audio_url)
+        local_file_name = audio_url.split('/')[-1]
+
+        if os.path.exists(local_file_name) :
+            print(local_file_name + " have been done")
+        else :
+            urllib.request.urlretrieve(audio_url,local_file_name, Schedule)
+            # print("Down")
+
+    else :
+        print(episode_url)
+        print("Audio file mising, please check!")
+
+
     print("")
 
     num+=1
